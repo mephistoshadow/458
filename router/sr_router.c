@@ -142,6 +142,52 @@ void handle_arp_reply(struct sr_instance* sr,uint8_t * packet,unsigned int len,c
 
 }
 
+void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface) {
+    assert(sr);
+    assert(packet);
+    assert(interface);
+
+    printf("Receiving IP Package.\n");
+    print_hdr_ip(packet + sizeof(sr_ethernet_hdr_t));
+    
+    //Get the ethernet header
+    sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet);
+    
+    // Get the ip header
+    sr_ip_hdr_t *ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+    // Error checking of assigning ip header
+    if (!ip_hdr) {
+        fprintf(stderr, "Assigning ip header error.\n");
+        exit(0);
+    }
+    
+    //Checking checksum
+    uint16_t checksum = ip_hdr -> ip_sum;
+    ip_hdr -> ip_sum = 0;
+    if (cksum(ip_hdr, sizeof(sr_ip_hdr_t) != checksum) {
+        fprintf(stderr, "Wrong checksum.\n");
+    }
+    ip_hdr -> ip_sum = checksum;
+    
+    
+    
+    
+}
+
+struct sr_ethernet_hdr_t get_ethrnet_hdr(uint8_t * packet) {
+    assert(packet);
+    
+    sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
+    // Error checking
+    if (!ethernet_hdr) {
+        fprintf(stderr, "Assigning ethernet header error.\n");
+        exit(0);
+    }
+    return ethernet_hdr;
+}
+
+
+
 
 
 
