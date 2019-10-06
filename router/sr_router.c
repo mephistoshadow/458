@@ -102,26 +102,43 @@ void sr_init(struct sr_instance* sr)
 
 }
 
-void arp_requet(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface){
+void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface){
   struct sr_if *sr_interface = sr_get_interface(sr,interface);
 
-  sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
-  sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+    sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
+    sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
       // get the new packet length.
-  int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
+    int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
       // malloc the send back packet's memory;
-  uint8_t  *back_packet = (uint8_t*)malloc(length_new_packet);
+    uint8_t  *back_packet = (uint8_t*)malloc(length_new_packet);
       // assign the new thernet header;
-  sr_ethernet_hdr_t* new_ethernet_hdr = (sr_ethernet_hdr_t*) back_packet;
-  memcpy(new_ethernet_hdr -> ether_dhost,ethernet_hdr -> ether_shost,sizeof(ether_shost));
-  memcpy(new_ethernet_hdr -> ether_shost,sr_interfac -> addr,sizeof(ether_dhost));
-  new_ethernet_hdr -> ether_type = ethernet_hdr -> ether_type;
+    sr_ethernet_hdr_t* new_ethernet_hdr = (sr_ethernet_hdr_t*) back_packet;
+    memcpy(new_ethernet_hdr -> ether_dhost,ethernet_hdr -> ether_shost,ETHER_ADDR_LEN);
+    memcpy(new_ethernet_hdr -> ether_shost,sr_interface -> addr,ETHER_ADDR_LEN);
+    new_ethernet_hdr -> ether_type = ethernet_hdr -> ether_type;
       // assign the new arp header for send back.
-  sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (back_packet + sizeof(sr_ethernet_hdr_t));
-  memcpy(new_ethernet_hdr -> ether_dhost,ethernet_hdr -> ether_shost,sizeof(ether_shost));
+    sr_arp_hdr_t *new_arp_hdr = (sr_arp_hdr_t*) (back_packet + sizeof(sr_ethernet_hdr_t));
+  // revert the hardware address for sender and reciever;
+    memcpy(new_arp_hdr -> ar_sha, sr_interface -> addr,ETHER_ADDR_LEN);
+    memcpy(new_arp_hdr -> ar_tha,  arp_hdr -> ar_sha,ETHER_ADDR_LEN);
+  // assign the rest variable for arp header;
+    new_arp_hdr -> ar_hrd = arp_hdr -> ar_hrd;
+    new_arp_hdr -> ar_pro = arp_hdr -> ar_pro;
+    new_arp_hdr -> ar_hln = arp_hdr -> ar_hln;
+    new_arp_hdr -> ar_pln = arp_hdr -> ar_pln;
+  // convert the op code to big endian
+    new_arp_hdr -> ar_op = htons(arp_op_reply);
+  // revert the ip address for sender and receiever;
+    new_arp_hdr -> ar_sip = sr_interface -> ip;
+    new_arp_hdr -> ar_tip = arp_hdr -> ar_sip;
+    sr_send_packet(sr,back_packet,length_new_packet,sr_interface->name);
+    free(back_packet);
+}
 
-
-
+void handle_arp_reply(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface) {
+  // get the cache for sr.
+  struct sr_arpcache *sr_cache = &sr->cache;
+  
 
 }
 
