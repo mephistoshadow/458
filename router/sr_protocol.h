@@ -102,6 +102,27 @@ struct sr_icmp_t3_hdr {
 typedef struct sr_icmp_t3_hdr sr_icmp_t3_hdr_t;
 
 
+/* Custom: ICMP message types */
+enum icmp_type {
+    icmp_echo_reply = 0,
+    icmp_dest_unreachable = 3,
+    icmp_time_exceeded = 11,
+};
+
+/* Custom: ICMP msg type 3 codes */
+enum icmp_dest_unreachable_code {
+    icmp_dest_unreachable_net = 0,
+    icmp_dest_unreachable_host = 1,
+    icmp_dest_unreachable_port = 3,
+    icmp_dest_unreachable_frag_but_dont_frag_set = 4,
+};
+
+/* Custom: ICMP msg type 11 codes */
+enum icmp_time_exceeded_code {
+    icmp_time_exceeded_transit = 0,
+    icmp_time_exceeded_reassembly = 1,
+};
+
 
 
 /*
