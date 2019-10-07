@@ -62,7 +62,6 @@ struct sr_if* sr_get_interface_by_ip(struct sr_instance* sr, uint32_t ip) {
     struct sr_if* if_walker = 0;
 
     /* -- REQUIRES -- */
-    // assert(name);
     assert(sr);
 
     if_walker = sr->if_list;
