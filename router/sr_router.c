@@ -12,9 +12,9 @@
  **********************************************************************/
 
 
-// added
-#include <stdlib.h>
 
+#include <stdlib.h>
+#include  <string.h>
 
 #include <stdio.h>
 #include <assert.h>
@@ -88,9 +88,9 @@ void sr_init(struct sr_instance* sr)
 
     }
 
-    uint16_t e_type = ethertype(ethernet_hdr);
+    uint16_t e_type = ethertype((uint8_t *)ethernet_hdr);
     if(e_type == ethertype_ip) {
-      // handle_ip();
+      
     } else if (e_type == ethertype_arp) {
       handle_arp_total(sr,packet,len,interface);
     }
@@ -112,28 +112,28 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
 
     sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
     sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-      // get the new packet length.
+      /* get the new packet length.*/
     int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
-      // malloc the send back packet's memory;
+       /* malloc the send back packet memory.*/
     uint8_t  *back_packet = (uint8_t*)malloc(length_new_packet);
-      // assign the new thernet header;
+       /* assign the new thernet header.*/
     sr_ethernet_hdr_t* new_ethernet_hdr = (sr_ethernet_hdr_t*) back_packet;
     memcpy(new_ethernet_hdr -> ether_dhost,ethernet_hdr -> ether_shost,ETHER_ADDR_LEN);
     memcpy(new_ethernet_hdr -> ether_shost,sr_interface -> addr,ETHER_ADDR_LEN);
     new_ethernet_hdr -> ether_type = ethernet_hdr -> ether_type;
-      // assign the new arp header for send back.
+       /* assign the new arp header for send back.*/
     sr_arp_hdr_t *new_arp_hdr = (sr_arp_hdr_t*) (back_packet + sizeof(sr_ethernet_hdr_t));
-  // revert the hardware address for sender and reciever;
+   /* revert the hardware address for sender and reciever.*/
     memcpy(new_arp_hdr -> ar_sha, sr_interface -> addr,ETHER_ADDR_LEN);
     memcpy(new_arp_hdr -> ar_tha,  arp_hdr -> ar_sha,ETHER_ADDR_LEN);
-  // assign the rest variable for arp header;
+   /* assign the rest variable for arp header.*/
     new_arp_hdr -> ar_hrd = arp_hdr -> ar_hrd;
     new_arp_hdr -> ar_pro = arp_hdr -> ar_pro;
     new_arp_hdr -> ar_hln = arp_hdr -> ar_hln;
     new_arp_hdr -> ar_pln = arp_hdr -> ar_pln;
-  // convert the op code to big endian
+   /* convert the op code to big endian.*/
     new_arp_hdr -> ar_op = htons(arp_op_reply);
-  // revert the ip address for sender and receiever;
+   /* revert the ip address for sender and receiever.*/
     new_arp_hdr -> ar_sip = sr_interface -> ip;
     new_arp_hdr -> ar_tip = arp_hdr -> ar_sip;
     sr_send_packet(sr,back_packet,length_new_packet,sr_interface->name);
@@ -141,8 +141,11 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
 }
 
 void handle_arp_reply(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface) {
-  // get the cache for sr.
+  /*get the cache for sr.*/
   struct sr_arpcache *sr_cache = &sr->cache;
+  sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+  uint32_t target_ip = arp_hdr -> ar_tip;
+  sr_arpcache_lookup(sr_cache,target_ip);
   
 
 }
@@ -155,18 +158,18 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     printf("Receiving IP Package.\n");
     print_hdr_ip(packet + sizeof(sr_ethernet_hdr_t));
     
-    //Get the ethernet header
+    /*Get the ethernet header.*/
     sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet);
     
-    // Get the ip header
+    /* Get the ip header.*/
     sr_ip_hdr_t *ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-    // Error checking of assigning ip header
+    /* Error checking of assigning ip header.*/
     if (!ip_hdr) {
         fprintf(stderr, "Assigning ip header error.\n");
         exit(0);
     }
     
-    //Checking checksum
+    /*Checking checksum.*/
     uint16_t checksum = ip_hdr -> ip_sum;
     ip_hdr -> ip_sum = 0;
     if (cksum(ip_hdr, sizeof(sr_ip_hdr_t) != checksum)) {
@@ -174,10 +177,10 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     }
     ip_hdr -> ip_sum = checksum;
     
-    // Find if the destination of package is this router
+    /* Find if the destination of package is this router.*/
     struct sr_if *dest_interface = sr_get_interface_by_ip(sr, ip_hdr -> ip_dst);
      
-    // Packet's destination is this router
+    /*Packet destination is this router.*/
     if (dest_interface) {
       printf("Packet for this router.\n");
 
@@ -198,7 +201,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
         printf("Cannot handle packet protocol.\n");
         break;
       }
-    } else {  //Packet's destination is elsewhere
+    } else {  /*Packet destination is elsewhere.*/
       printf("Packet not for this router.\n");
       
     }
@@ -207,12 +210,12 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     
 }
 
-// Function that assign packet to ethrnet header
+/*Function that assign packet to ethrnet header.*/
 sr_ethernet_hdr_t * get_ethrnet_hdr(uint8_t * packet) {
     assert(packet);
     
     sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
-    // Error checking
+    /* Error checking.*/
     if (!ethernet_hdr) {
         fprintf(stderr, "Assigning ethernet header error.\n");
         exit(0);
