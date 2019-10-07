@@ -174,7 +174,35 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     }
     ip_hdr -> ip_sum = checksum;
     
-    
+    // Find if the destination of package is this router
+    struct sr_if *dest_interface = sr_get_interface_by_ip(sr, ip_hdr -> ip_dst);
+     
+    // Packet's destination is this router
+    if (dest_interface) {
+      printf("Packet for this router.\n");
+
+      switch (ip_hdr -> ip_p)
+      {
+      case ip_protocol_icmp:
+        
+        break;
+      
+      case ip_protocol_tcp:
+
+        break;
+
+      case ip_protocol_udp:
+
+        break;
+      default:
+        printf("Cannot handle packet protocol.\n");
+        break;
+      }
+    } else {  //Packet's destination is elsewhere
+      printf("Packet not for this router.\n");
+      
+    }
+
     
     
 }
