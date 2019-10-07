@@ -11,6 +11,11 @@
  *
  **********************************************************************/
 
+
+// added
+#include <stdlib.h>
+
+
 #include <stdio.h>
 #include <assert.h>
 
@@ -85,7 +90,7 @@ void sr_init(struct sr_instance* sr)
 
     uint16_t e_type = ethertype(ethernet_hdr);
     if(e_type == ethertype_ip) {
-      handle_ip();
+      // handle_ip();
     } else if (e_type == ethertype_arp) {
       handle_arp_total(sr,packet,len,interface);
     }
@@ -164,7 +169,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     //Checking checksum
     uint16_t checksum = ip_hdr -> ip_sum;
     ip_hdr -> ip_sum = 0;
-    if (cksum(ip_hdr, sizeof(sr_ip_hdr_t) != checksum) {
+    if (cksum(ip_hdr, sizeof(sr_ip_hdr_t) != checksum)) {
         fprintf(stderr, "Wrong checksum.\n");
     }
     ip_hdr -> ip_sum = checksum;
@@ -174,7 +179,8 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     
 }
 
-struct sr_ethernet_hdr_t get_ethrnet_hdr(uint8_t * packet) {
+// Function that assign packet to ethrnet header
+sr_ethernet_hdr_t * get_ethrnet_hdr(uint8_t * packet) {
     assert(packet);
     
     sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;

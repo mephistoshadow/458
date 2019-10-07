@@ -69,6 +69,7 @@ void sr_init(struct sr_instance* );
 void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 void handle_arp_total(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface);
 void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface);
+sr_ethernet_hdr_t * get_ethrnet_hdr(uint8_t * packet);
 void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface);
 
 /* -- sr_if.c -- */
