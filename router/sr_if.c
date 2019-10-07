@@ -54,6 +54,29 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name)
     return 0;
 } /* -- sr_get_interface -- */
 
+/*--------------------------------------------------------------------
+ * Added function
+ * Get interface by ip address. 
+ */
+struct sr_if* sr_get_interface_by_ip(struct sr_instance* sr, uint32_t ip) {
+    struct sr_if* if_walker = 0;
+
+    /* -- REQUIRES -- */
+    assert(name);
+    assert(sr);
+
+    if_walker = sr->if_list;
+
+    while(if_walker)
+    {
+       if(if_walker -> ip == ip)
+        { return if_walker; }
+        if_walker = if_walker->next;
+    }
+
+    return 0;
+}
+
 /*--------------------------------------------------------------------- 
  * Method: sr_add_interface(..)
  * Scope: Global
