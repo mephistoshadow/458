@@ -345,18 +345,18 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     {
       case ip_protocol_icmp:
         printf("It's ICMP.");
-        // Handle a ICMP message
+     
 
       break;
       
       case ip_protocol_tcp:
-        // Send ICMP message type 3 code 3 (Port unreachable)
+
         printf("It's TCP.");
 
       break;
 
       case ip_protocol_udp:
-        // Send ICMP message type 3 code 3 (Port unreachable)
+            
         printf("It's UDP.");
 
       break;
@@ -371,28 +371,27 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
       // Decrease TTL and check if TTL = 0
       ip_hdr -> ip_ttl --;
       if (ip_hdr -> ip_ttl < 1) {
-        printf("Packet's TTl decrease to 0, drop the package.\n");
-        //Send ICMP message type 11, code 0 (Time Exceeded)
+       printf("Packet's TTl decrease to 0, drop the package.\n");
+          /*Send ICMP message type 11, code 0 (Time Exceeded)*/
+            send_icmp_packet(sr, packet, len, interface, icmp_time_exceeded, icmp_time_exceeded_transit);
+          return;
+        }
 
-        return;
-      }
+        /* Recalculate the checksum*/
+        ip_hdr -> ip_sum = 0;
+        ip_hdr -> ip_sum = cksum(ip_hdr, sizeof(sr_ip_hdr_t));
 
-      // Recalculate the checksum
-      ip_hdr -> ip_sum = 0;
-      ip_hdr -> ip_sum = cksum(ip_hdr, sizeof(sr_ip_hdr_t));
+        /* Find the destination router*/
+        struct sr_rt *match = sr_find_lpm(sr, ip_hdr -> ip_dst);
+        if(match == NULL) {
+          /* Send ICMP message type 3, code 0 (Destination net unreachable)*/
+          printf("Cannot find destination.\n");
+            send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_net);
 
-      // Find the destination router
-      struct sr_rt *match = sr_find_lpm(sr, ip_hdr -> ip_dst);
-      if(match == NULL) {
-        // Send ICMP message type 3, code 0 (Destination net unreachable)
-        printf("Cannot find destination.\n");
-
-
-      } else {
-        // Destination has been found, find the interface.
-        printf("Destination found.\n");
-
-      }
+        } else {
+          /* Destination has been found, find the interface.*/
+          printf("Destination found.\n");
+        }
   }
 
 
