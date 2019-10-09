@@ -337,8 +337,9 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     /* Find if the destination of package is this router. */
   struct sr_if *dest_interface = sr_get_interface_by_ip(sr, ip_hdr -> ip_dst);
 
-    /* Packet destination is this router. */
+  
   if (dest_interface) {
+    /* Packet destination is this router. */
     printf("Packet for this router.\n");
 
     switch (ip_hdr -> ip_p)
@@ -364,7 +365,8 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
         printf("Cannot handle packet protocol.\n");
       break;
     }
-    } else {  /*Packet destination is elsewhere.*/
+    } else {
+      // Packet destination is elsewhere.
       printf("Packet not for this router.\n");
 
       // Modify the ip header
@@ -389,14 +391,24 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
 
 
       } else {
-        // Destination has been found, find the interface.
+        // Destination has been found, check ARP cache
         printf("Destination found.\n");
 
+        struct sr_arpcache *sr_cache = &sr->cache;
+        struct sr_arpentry *entry = sr_arpcache_lookup(sr_cache, ip_hdr -> ip_dst);
+
+        if (entry) {
+          // Send frame to next hop
+          printf("Found ARP entry in ARP cache, send it to next hop.\n");
+
+        } else {
+          // Send ARP Request
+          printf("Cannot found ARP entry in ARP cache, send ARP request.\n");
+          struct sr_arpreq *req = arpcache_queuereq(sr_cache ,ip_hdr -> ip_dst, packet, len, match -> interface);
+          handle_arpreq(sr, req);
+        }
       }
   }
-
-
-
 }
 
 /* Function that assign packet to ethrnet header. */
