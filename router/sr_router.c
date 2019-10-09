@@ -186,10 +186,10 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
   printf("Receiving IP Package.\n");
   print_hdr_ip(packet + sizeof(sr_ethernet_hdr_t));
 
-    /*Get the ethernet header.*/
+    /* Get the ethernet header. */
   sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet);
 
-    /* Get the ip header.*/
+    /* Get the ip header. */
   sr_ip_hdr_t *ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
     /* Error checking of assigning ip header.*/
   if (!ip_hdr) {
@@ -197,18 +197,19 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     exit(0);
   }
 
-    /*Checking checksum.*/
+    /* Checking checksum. */
   uint16_t checksum = ip_hdr -> ip_sum;
   ip_hdr -> ip_sum = 0;
-  if (cksum(ip_hdr, sizeof(sr_ip_hdr_t) != checksum)) {
+  if (cksum(ip_hdr, sizeof(sr_ip_hdr_t)) != checksum) {
     fprintf(stderr, "Wrong checksum.\n");
+    exit(0);
   }
   ip_hdr -> ip_sum = checksum;
 
-    /* Find if the destination of package is this router.*/
+    /* Find if the destination of package is this router. */
   struct sr_if *dest_interface = sr_get_interface_by_ip(sr, ip_hdr -> ip_dst);
 
-    /*Packet destination is this router.*/
+    /* Packet destination is this router. */
   if (dest_interface) {
     printf("Packet for this router.\n");
 
@@ -230,15 +231,41 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
       break;
     }
     } else {  /*Packet destination is elsewhere.*/
-    printf("Packet not for this router.\n");
+      printf("Packet not for this router.\n");
 
+      // Modify the ip header
+      // Decrease TTL and check if TTL = 0
+      ip_hdr -> ip_ttl --;
+      if (ip_hdr -> ip_ttl < 1) {
+        printf("Packet's TTl decrease to 0, drop the package.\n");
+        //Send ICMP message type 11, code 0 (Time Exceeded)
+
+        return;
+      }
+
+      // Recalculate the checksum
+      ip_hdr -> ip_sum = 0;
+      ip_hdr -> ip_sum = cksum(ip_hdr, sizeof(sr_ip_hdr_t));
+
+      // Find the destination router
+      struct sr_rt *match = sr_find_lpm(sr, ip_hdr -> ip_dst);
+      if(match == NULL) {
+        // Send ICMP message type 3, code 0 (Destination net unreachable)
+        printf("Cannot find destination.\n");
+
+
+      } else {
+        // Destination has been found, find the interface.
+        printf("Destination found.\n");
+
+      }
   }
 
 
 
 }
 
-/*Function that assign packet to ethrnet header.*/
+/* Function that assign packet to ethrnet header. */
 sr_ethernet_hdr_t * get_ethrnet_hdr(uint8_t * packet) {
   assert(packet);
 

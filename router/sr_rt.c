@@ -176,3 +176,33 @@ void sr_print_routing_entry(struct sr_rt* entry)
     printf("%s\n",entry->interface);
 
 } /* -- sr_print_routing_entry -- */
+
+
+ /* Function that finds the longest prefix match, given the destination ip. */
+struct sr_rt * sr_find_lpm(struct sr_instance* sr, uint32_t dest) {
+  struct sr_rt *sr_routing_table = sr -> routing_table;
+  struct sr_rt *match = NULL;
+
+  printf("Destination IP：\n");
+  print_addr_ip_int(dest);
+
+  while (sr_routing_table != NULL) {
+      // Check there the prefix match
+    if ((sr_routing_table -> mask.s_addr & sr_routing_table -> dest.s_addr) == 
+    (dest & sr_routing_table -> dest.s_addr)) {
+        // Update the longest prefix match
+      if (!match || (sr_routing_table -> mask.s_addr > match -> mask.s_addr)) {
+        match = sr_routing_table;
+      }
+      sr_routing_table = sr_routing_table -> next;
+    }
+  }
+
+  if (match) {
+      printf("Lpm found.\n");
+    } else {
+      printf("Cannot find lpm match.\n");
+    }
+    return match;
+
+}
