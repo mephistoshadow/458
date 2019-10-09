@@ -39,7 +39,7 @@ void handle_arpreq (struct sr_instance *sr,struct sr_arpreq *arp_requests) {
             while(wait_packets) {
                 /*generate the icmp unreachable*/
                 uint8_t *the_packet = wait_packets->buf;
-                send_icmp_packet(sr,the_packet,length_new_packet,sr_interface,icmp_dest_unreachable,icmp_dest_unreachable_host);
+                send_icmp_packet(sr,the_packet,length_new_packet,wait_packets->iface,icmp_dest_unreachable,icmp_dest_unreachable_host);
                 wait_packets= wait_packets->next;
             }
             sr_arpreq_destroy(cache,arp_requests);
