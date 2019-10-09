@@ -344,18 +344,24 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     switch (ip_hdr -> ip_p)
     {
       case ip_protocol_icmp:
+        printf("It's ICMP.");
+        // Handle a ICMP message
 
       break;
       
       case ip_protocol_tcp:
+        // Send ICMP message type 3 code 3 (Port unreachable)
+        printf("It's TCP.");
 
       break;
 
       case ip_protocol_udp:
+        // Send ICMP message type 3 code 3 (Port unreachable)
+        printf("It's UDP.");
 
       break;
       default:
-      printf("Cannot handle packet protocol.\n");
+        printf("Cannot handle packet protocol.\n");
       break;
     }
     } else {  /*Packet destination is elsewhere.*/
