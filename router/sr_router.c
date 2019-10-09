@@ -367,8 +367,6 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     } else {  /*Packet destination is elsewhere.*/
       printf("Packet not for this router.\n");
 
-      // Modify the ip header
-      // Decrease TTL and check if TTL = 0
       ip_hdr -> ip_ttl --;
       if (ip_hdr -> ip_ttl < 1) {
        printf("Packet's TTl decrease to 0, drop the package.\n");
