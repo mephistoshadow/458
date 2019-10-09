@@ -31,18 +31,58 @@ void handle_arpreq (struct sr_instance *sr,struct sr_arpreq *arp_requests) {
     time_t now;
     struct sr_arpcache *cache = &(sr->cache);
     struct sr_packet* wait_packets = arp_requests->packets;
-    if(difftime(time(&now),arp_requests->sent)>1.0) {
+    double different_t = difftime(time(&now),arp_requests->sent);
+    struct sr_if *sr_interface = sr_get_interface(sr,wait_packets->iface);
+    int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
+    if(different_t>1.0) {
         if(arp_requests->times_sent >=5) {
             while(wait_packets) {
                 /*generate the icmp unreachable*/
+                uint8_t *the_packet = wait_packets->buf;
+                // send_icmp_packet(sr,the_packet,length_new_packet,icmp_dest_unreachable,icmp_dest_unreachable_host);
+                wait_packets= wait_packets->next;
             }
             sr_arpreq_destroy(cache,arp_requests);
         }else {
-            
+            send_broad_cast_arp(sr,arp_requests,length_new_packet,sr_interface);
             arp_requests->times_sent ++;
             arp_requests->sent= time(&now);
+            
         }
     }
+
+}
+void send_broad_cast_arp(struct sr_instance *sr,struct sr_arpreq *arp_requests,int length_new_packet,struct sr_if * sr_interface) {
+    uint8_t  broad_case_add[ETHER_ADDR_LEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+     /*below is to generate the arp request*/
+    /*get the packet length*/
+
+    /*create the send packet's emory*/
+    uint8_t *send_packet = malloc(length_new_packet);
+
+    /* assign the new ethernet header.*/
+    sr_ethernet_hdr_t* new_ethernet_hdr = (sr_ethernet_hdr_t*) send_packet;
+    new_ethernet_hdr->ether_type = htons(ethertype_arp);
+
+    memcpy(new_ethernet_hdr -> ether_shost,sr_interface -> addr,ETHER_ADDR_LEN);
+    /*set the target ethernet address as the broadcast address*/
+    memcpy(new_ethernet_hdr -> ether_dhost,broad_case_add,ETHER_ADDR_LEN);
+
+    /*assign the arp header*/
+    sr_arp_hdr_t *new_arp_header = (sr_arp_hdr_t*) (send_packet + sizeof(sr_ethernet_hdr_t));
+    new_arp_header->ar_hrd = htons(arp_hrd_ethernet);
+    new_arp_header->ar_pro = htons(ethertype_ip);
+    new_arp_header->ar_pln = 4;           
+    new_arp_header->ar_hln = ETHER_ADDR_LEN;
+    new_arp_header->ar_op = htons(arp_op_request);
+    memcpy(new_arp_header->ar_sha,sr_interface -> addr,ETHER_ADDR_LEN);
+    /*set the target ethernet address as the broadcast address*/
+    memcpy(new_arp_header->ar_tha,broad_case_add,ETHER_ADDR_LEN);
+    new_arp_header -> ar_sip = sr_interface->ip;
+    new_arp_header -> ar_tip = arp_requests->ip;
+
+    sr_send_packet(sr,send_packet,length_new_packet,sr_interface->name);
+    free(send_packet);
 
 }
 

@@ -87,7 +87,7 @@ void sr_init(struct sr_instance* sr)
       printf("the lengh does not meet the minimum length of ethernet\n");
 
     }
-    
+
     if(ethertype((uint8_t *)ethernet_hdr) == ethertype_ip) {
 
     } else if (ethertype((uint8_t *)ethernet_hdr) == ethertype_arp) {
@@ -120,7 +120,7 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
       /* get the new packet length.*/
   int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
        /* malloc the send back packet memory.*/
-  uint8_t  *back_packet = (uint8_t*)malloc(length_new_packet);
+  uint8_t  *back_packet = malloc(length_new_packet);
        /* assign the new thernet header.*/
   sr_ethernet_hdr_t* new_ethernet_hdr = (sr_ethernet_hdr_t*) back_packet;
   memcpy(new_ethernet_hdr -> ether_dhost,ethernet_hdr -> ether_shost,ETHER_ADDR_LEN);
