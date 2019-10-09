@@ -112,6 +112,24 @@ void sr_init(struct sr_instance* sr)
 
 }
 
+
+struct sr_rt* longest_matching_prefix(struct sr_instance* sr, uint32_t ip) {
+    struct sr_rt* longest_prefix_entry = NULL;
+
+    char ip_string[15];
+    struct sr_rt* table_entry = sr->routing_table;
+    while(table_entry) {
+        if((table_entry->dest.s_addr & table_entry->mask.s_addr) == (ip & table_entry->mask.s_addr)) {
+            if(!longest_prefix_entry || table_entry->mask.s_addr > longest_prefix_entry->mask.s_addr) {
+                longest_prefix_entry = table_entry;
+            }
+        }
+        table_entry = table_entry->next;
+    }
+
+    return longest_prefix_entry;
+}
+
 void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len, char* interface, uint8_t type, uint8_t code){
     /* Get Ethernet header */
     sr_ethernet_hdr_t* eth_hdr = (sr_ethernet_hdr_t *) packet;
@@ -153,8 +171,8 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             break;
       
           }
-        case icmp_type_time_exceeded:
-        case icmp_type_dest_unreachble:{
+        case icmp_time_exceeded:
+        case icmp_dest_unreachable:{
             unsigned int new_len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
             uint8_t* new_packet = malloc(new_len);
             /*construct  ethernet header*/
@@ -174,7 +192,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             new_ip_hdr->ip_ttl  = 255;
             new_ip_hdr->ip_p    = ip_protocol_icmp;
             if (code==icmp_dest_unreachable_port){
-                new_ip_hdr->ip_src = ip_hdr->ip_dst
+                new_ip_hdr->ip_src = ip_hdr->ip_dst;
             }else{
                 new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
             }
@@ -204,7 +222,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                     memcpy(new_eth_hdr->ether_shost, out_interface->addr, sizeof(uint8_t)*ETHER_ADDR_LEN);
                 
 
-                    sr_send_packet(sr, new_packet, len, out_iface->name);
+                    sr_send_packet(sr, new_packet, len, out_interface->name);
                     free(arp_entry);
                 } else {
                     struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
@@ -212,7 +230,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                 }
             }
 
-            free(new_packet)
+            free(new_packet);
             break;
         }
             
