@@ -184,13 +184,13 @@ struct sr_rt * sr_find_lpm(struct sr_instance* sr, uint32_t dest) {
   struct sr_rt *match = NULL;
 
   printf("Destination IP：\n");
-  print_addr_ip_int(dest);
+  /*print_addr_ip_int(dest);*/
 
   while (sr_routing_table != NULL) {
-      // Check there the prefix match
+      /* Check there the prefix match*/
     if ((sr_routing_table -> mask.s_addr & sr_routing_table -> dest.s_addr) == 
     (dest & sr_routing_table -> dest.s_addr)) {
-        // Update the longest prefix match
+        /* Update the longest prefix match*/
       if (!match || (sr_routing_table -> mask.s_addr > match -> mask.s_addr)) {
         match = sr_routing_table;
       }
