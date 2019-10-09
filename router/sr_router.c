@@ -112,6 +112,116 @@ void sr_init(struct sr_instance* sr)
 
 }
 
+void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len, char* interface, uint8_t type, uint8_t code){
+    /* Get Ethernet header */
+    sr_ethernet_hdr_t* eth_hdr = (sr_ethernet_hdr_t *) packet;
+
+    /* Get IP header */
+    sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t *) (packet + sizeof(sr_ethernet_hdr_t));
+
+    /*get arp caehe*/
+    struct sr_arpcache *sr_cache = &sr->cache;
+    switch(type){
+        case icmp_echo_reply:{
+            /* Get ICMP header */
+            sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+
+
+            /* Modify ethernet header */
+            memcpy(eth_hdr->ether_dhost, eth_hdr->ether_shost, sizeof(uint8_t)*ETHER_ADDR_LEN);
+            memcpy(eth_hdr->ether_shost, sr_get_interface(sr, interface)->addr, sizeof(uint8_t)*ETHER_ADDR_LEN);
+
+            /* Modify IP header */
+            uint32_t src_ip = ip_hdr->ip_src;
+            ip_hdr->ip_src = ip_hdr->ip_dst;
+            ip_hdr->ip_dst = src_ip;
+            /* not necessary to calculate new  checksum */
+
+            /* Modify ICMP header  */
+            icmp_hdr->icmp_type = type;
+            icmp_hdr->icmp_code = code;
+            /*caculate new IP ckecksum*/
+            memset(&(icmp_hdr->icmp_sum), 0, sizeof(uint16_t));
+            icmp_hdr->icmp_sum = cksum(icmp_hdr, len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t));
+            struct sr_arpentry * arp_entry = sr_arpcache_lookup (sr_cache, ip_hdr->ip_dst);
+            if (arp_entry) {
+                sr_send_packet (sr, packet, len, interface);
+            } else {
+                struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
+                handle_arpreq(sr, req);
+            }
+            break;
+      
+          }
+        case icmp_type_time_exceeded:
+        case icmp_type_dest_unreachble:{
+            unsigned int new_len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
+            uint8_t* new_packet = malloc(new_len);
+            /*construct  ethernet header*/
+            sr_ethernet_hdr_t* new_eth_hdr = (sr_ethernet_hdr_t*)new_packet;
+            memset(new_eth_hdr->ether_shost, 0, ETHER_ADDR_LEN);
+            memset(new_eth_hdr->ether_dhost, 0, ETHER_ADDR_LEN);
+            /* set protocol type to IP */
+            new_eth_hdr->ether_type = htons(ethertype_ip);
+            /* construct IP hdr */
+            sr_ip_hdr_t* new_ip_hdr = (sr_ip_hdr_t*)(new_packet + sizeof(sr_ethernet_hdr_t));
+            new_ip_hdr->ip_v    = 4;
+            new_ip_hdr->ip_hl   = sizeof(sr_ip_hdr_t) / 4;
+            new_ip_hdr->ip_tos  = 0;
+            new_ip_hdr->ip_len  = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
+            new_ip_hdr->ip_id   = htons(0);
+            new_ip_hdr->ip_off  = htons(IP_DF);
+            new_ip_hdr->ip_ttl  = 255;
+            new_ip_hdr->ip_p    = ip_protocol_icmp;
+            if (code==icmp_dest_unreachable_port){
+                new_ip_hdr->ip_src = ip_hdr->ip_dst
+            }else{
+                new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
+            }
+            /* calculate new checksum */
+            new_ip_hdr->ip_sum = 0;
+            new_ip_hdr->ip_sum = cksum(new_ip_hdr, sizeof(sr_ip_hdr_t));
+
+             /* construct type 3 ICMP hdr */
+            sr_icmp_t3_hdr_t* icmp_hdr = (sr_icmp_t3_hdr_t*)(new_packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+            icmp_hdr->icmp_type = type;
+            icmp_hdr->icmp_code = code;
+            icmp_hdr->unused = 0;
+            icmp_hdr->next_mtu = 0;
+            memcpy(icmp_hdr->data, ip_hdr, ICMP_DATA_SIZE);
+            icmp_hdr->icmp_sum = 0;
+            icmp_hdr->icmp_sum = cksum(icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
+            struct sr_rt* rt_entry = longest_matching_prefix(sr, ip_hdr->ip_src);
+            if(rt_entry) {
+                struct sr_arpentry * arp_entry = sr_arpcache_lookup (sr_cache, ip_hdr->ip_dst);
+                if (arp_entry) {
+                    printf("Found the ARP entry in the cache\n");
+                    struct sr_if *out_interface = sr_get_interface(sr, rt_entry->interface);
+
+                    /* Modify ethernet header */
+                    sr_ethernet_hdr_t *new_eth_hdr = (sr_ethernet_hdr_t *) new_packet;
+                    memcpy(new_eth_hdr->ether_dhost, arp_entry->mac, sizeof(uint8_t)*ETHER_ADDR_LEN);
+                    memcpy(new_eth_hdr->ether_shost, out_interface->addr, sizeof(uint8_t)*ETHER_ADDR_LEN);
+                
+
+                    sr_send_packet(sr, new_packet, len, out_iface->name);
+                    free(arp_entry);
+                } else {
+                    struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
+                    handle_arpreq(sr, req);
+                }
+            }
+
+            free(new_packet)
+            break;
+        }
+            
+            
+            
+    }
+
+}
+
 void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface){
   struct sr_if *sr_interface = sr_get_interface(sr,interface);
 
