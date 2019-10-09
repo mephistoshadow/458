@@ -87,11 +87,10 @@ void sr_init(struct sr_instance* sr)
       printf("the lengh does not meet the minimum length of ethernet\n");
 
     }
+    
+    if(ethertype((uint8_t *)ethernet_hdr) == ethertype_ip) {
 
-    uint16_t e_type = ethertype((uint8_t *)ethernet_hdr);
-    if(e_type == ethertype_ip) {
-
-    } else if (e_type == ethertype_arp) {
+    } else if (ethertype((uint8_t *)ethernet_hdr) == ethertype_arp) {
       handle_arp_total(sr,packet,len,interface);
     }
 
@@ -99,12 +98,12 @@ void sr_init(struct sr_instance* sr)
   
   void handle_arp_total(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface){
 
-   sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-   struct sr_if* sr_interface = sr_get_interface_by_ip(sr,arp_hdr->ar_tip);
+   sr_arp_hdr_t *arp_header = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+   struct sr_if* sr_interface = sr_get_interface_by_ip(sr,arp_header->ar_tip);
    if(sr_interface) {
-    if(arp_hdr ->ar_op == arp_op_request) {
+    if(arp_header ->ar_op == arp_op_request) {
       arp_request(sr,packet,len,interface);
-    }else if(arp_hdr ->ar_op == arp_op_reply) {
+    }else if(arp_header ->ar_op == arp_op_reply) {
      handle_arp_reply(sr,packet,len,interface);
    }
 
@@ -117,7 +116,7 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
   struct sr_if *sr_interface = sr_get_interface(sr,interface);
 
   sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
-  sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+  sr_arp_hdr_t *arp_header = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
       /* get the new packet length.*/
   int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
        /* malloc the send back packet memory.*/
@@ -128,20 +127,20 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
   memcpy(new_ethernet_hdr -> ether_shost,sr_interface -> addr,ETHER_ADDR_LEN);
   new_ethernet_hdr -> ether_type = ethernet_hdr -> ether_type;
        /* assign the new arp header for send back.*/
-  sr_arp_hdr_t *new_arp_hdr = (sr_arp_hdr_t*) (back_packet + sizeof(sr_ethernet_hdr_t));
+  sr_arp_hdr_t *new_arp_header = (sr_arp_hdr_t*) (back_packet + sizeof(sr_ethernet_hdr_t));
    /* revert the hardware address for sender and reciever.*/
-  memcpy(new_arp_hdr -> ar_sha, sr_interface -> addr,ETHER_ADDR_LEN);
-  memcpy(new_arp_hdr -> ar_tha,  arp_hdr -> ar_sha,ETHER_ADDR_LEN);
+  memcpy(new_arp_header -> ar_sha, sr_interface -> addr,ETHER_ADDR_LEN);
+  memcpy(new_arp_header -> ar_tha,  arp_header -> ar_sha,ETHER_ADDR_LEN);
    /* assign the rest variable for arp header.*/
-  new_arp_hdr -> ar_hrd = arp_hdr -> ar_hrd;
-  new_arp_hdr -> ar_pro = arp_hdr -> ar_pro;
-  new_arp_hdr -> ar_hln = arp_hdr -> ar_hln;
-  new_arp_hdr -> ar_pln = arp_hdr -> ar_pln;
+  new_arp_header -> ar_hrd = arp_header -> ar_hrd;
+  new_arp_header -> ar_pro = arp_header -> ar_pro;
+  new_arp_header -> ar_hln = arp_header -> ar_hln;
+  new_arp_header -> ar_pln = arp_header -> ar_pln;
    /* convert the op code to big endian.*/
-  new_arp_hdr -> ar_op = htons(arp_op_reply);
+  new_arp_header -> ar_op = htons(arp_op_reply);
    /* revert the ip address for sender and receiever.*/
-  new_arp_hdr -> ar_sip = sr_interface -> ip;
-  new_arp_hdr -> ar_tip = arp_hdr -> ar_sip;
+  new_arp_header -> ar_sip = sr_interface -> ip;
+  new_arp_header -> ar_tip = arp_header -> ar_sip;
   sr_send_packet(sr,back_packet,length_new_packet,sr_interface->name);
   free(back_packet);
 }
@@ -149,11 +148,11 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
 void handle_arp_reply(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* interface) {
   /*get the cache for sr.*/
   struct sr_arpcache *sr_cache = &sr->cache;
-  sr_arp_hdr_t *arp_hdr = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-  uint32_t sender_ip = arp_hdr -> ar_sip;
+  sr_arp_hdr_t *arp_header = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
+  uint32_t sender_ip = arp_header -> ar_sip;
   /*check the arp cache table to see if we have the request for our target ip and MAC address. Note, in the
   previoues steps, we have revert the target and source ip and MAC address, so this is the oringinal target address.*/
-  struct sr_arpreq *request = sr_arpcache_insert(sr_cache,arp_hdr -> ar_sha,sender_ip);
+  struct sr_arpreq *request = sr_arpcache_insert(sr_cache,arp_header -> ar_sha,sender_ip);
   /* if request exists send the outstandig packet*/
   if(request) {
     struct sr_packet *packets = request -> packets;
@@ -161,9 +160,10 @@ void handle_arp_reply(struct sr_instance* sr,uint8_t * packet,unsigned int len,c
       /**/
       /* set the ethernet header from the packets-> buf*/
       sr_ethernet_hdr_t *new_ether_hdr = (sr_ethernet_hdr_t *) packets->buf;
-      struct sr_if *sr_interface = sr_get_interface(sr,packets->iface);
+     
       /*cause the packets's buf does not have the MAC address so we need to set it manually*/
-      memcpy(new_ether_hdr->ether_dhost, arp_hdr->ar_sha, ETHER_ADDR_LEN);
+      memcpy(new_ether_hdr->ether_dhost, arp_header->ar_sha, ETHER_ADDR_LEN);
+      struct sr_if *sr_interface = sr_get_interface(sr,packets->iface);
       memcpy(new_ether_hdr->ether_shost, sr_interface->addr, ETHER_ADDR_LEN);
       /*send the packet as it oringinal should go*/
       sr_send_packet(sr,packets->buf,packets->len,packets->iface);
