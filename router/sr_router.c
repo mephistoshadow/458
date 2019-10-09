@@ -89,6 +89,7 @@ void sr_init(struct sr_instance* sr)
     }
 
     if(ethertype((uint8_t *)ethernet_hdr) == ethertype_ip) {
+      handle_ip(sr,packet,len,interface);
 
     } else if (ethertype((uint8_t *)ethernet_hdr) == ethertype_arp) {
       handle_arp_total(sr,packet,len,interface);
