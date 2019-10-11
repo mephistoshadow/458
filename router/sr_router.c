@@ -88,9 +88,11 @@ void sr_init(struct sr_instance* sr)
     }
 
     if(ethertype((uint8_t *)ethernet_hdr) == ethertype_ip) {
+      printf("It's IP packet.\n");
       handle_ip(sr,packet,len,interface);
 
     } else if (ethertype((uint8_t *)ethernet_hdr) == ethertype_arp) {
+      printf("It's ARP packet.\n");
       handle_arp_total(sr,packet,len,interface);
     }
 
@@ -142,6 +144,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
     switch(type){
         case icmp_echo_reply:{
             /* Get ICMP header */
+            printf("ICMP echo.\n");
             sr_icmp_hdr_t* icmp_hdr = (sr_icmp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
 
 
@@ -173,6 +176,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
           }
         case icmp_time_exceeded:
         case icmp_dest_unreachable:{
+          printf("ICMP destination unreachable.\n");
             unsigned int new_len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
             uint8_t* new_packet = malloc(new_len);
             /*construct  ethernet header*/
