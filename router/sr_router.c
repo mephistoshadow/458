@@ -346,7 +346,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     switch (ip_hdr -> ip_p)
     {
       case ip_protocol_icmp:
-      // Check if it's ICMP echo request
+      /*Check if it's ICMP echo request*/
         printf("It's ICMP.");
 
 
@@ -356,13 +356,13 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
       break;
       
       case ip_protocol_tcp:
-        // Send ICMP message type 3 code 3 (Port unreachable)
+       /*// Send ICMP message type 3 code 3 (Port unreachable)*/ 
         printf("It's TCP.");
 
       break;
 
       case ip_protocol_udp:
-        // Send ICMP message type 3 code 3 (Port unreachable)    
+       /* // Send ICMP message type 3 code 3 (Port unreachable)  */  
         printf("It's UDP.");
 
       break;
@@ -371,7 +371,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
       break;
     }
     } else {
-      // Packet destination is elsewhere.
+      /* // Packet destination is elsewhere.*/
       printf("Packet not for this router.\n");
 
       ip_hdr -> ip_ttl --;
@@ -395,14 +395,14 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
             send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_net);
 
         } else {
-        // Destination has been found, check ARP cache
+       /*// Destination has been found, check ARP cache*/ 
         printf("Destination found.\n");
 
         struct sr_arpcache *sr_cache = &sr->cache;
         struct sr_arpentry *entry = sr_arpcache_lookup(sr_cache, ip_hdr -> ip_dst);
 
         if (entry) {
-          // Send frame to next hop
+         /*// Send frame to next hop*/ 
           printf("Found ARP entry in ARP cache, send it to next hop.\n");
 
 
@@ -410,7 +410,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
           
 
         } else {
-          // Send ARP Request
+         /* // Send ARP Request*/
           printf("Cannot found ARP entry in ARP cache, send ARP request.\n");
           struct sr_arpreq *req = arpcache_queuereq(sr_cache ,ip_hdr -> ip_dst, packet, len, match -> interface);
           handle_arpreq(sr, req);
