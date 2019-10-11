@@ -98,8 +98,6 @@ void sr_init(struct sr_instance* sr)
       printf("It's ARP packet.\n");
       print_hdr_arp(packet + sizeof(sr_ethernet_hdr_t));
       handle_arp_total(sr,packet,len,interface);
-    } else {
-      printf("Packet unknown.\n");
     }
 
   }
@@ -280,6 +278,7 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
   new_arp_header -> ar_sip = sr_interface -> ip;
   new_arp_header -> ar_tip = arp_header -> ar_sip;
   sr_send_packet(sr,back_packet,length_new_packet,sr_interface->name);
+  print_hdr_arp(back_packet + sizeof(sr_ethernet_hdr_t));
   free(back_packet);
 }
 
