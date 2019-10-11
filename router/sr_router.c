@@ -240,7 +240,10 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                     struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
                     handle_arpreq(sr, req);
                 }
+            }else{
+              printf("route table not found\n");
             }
+    
 
             free(new_packet);
             break;
@@ -398,7 +401,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
       if (ip_hdr -> ip_ttl < 1) {
        printf("Packet's TTl decrease to 0, drop the package.\n");
           /*Send ICMP message type 11, code 0 (Time Exceeded)*/
-            send_icmp_packet(sr, packet, len, interface, icmp_time_exceeded, icmp_time_exceeded_transit);
+          send_icmp_packet(sr, packet, len, interface, icmp_time_exceeded, icmp_time_exceeded_transit);
           return;
         }
 
