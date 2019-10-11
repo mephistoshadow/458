@@ -83,9 +83,9 @@ void sr_init(struct sr_instance* sr)
 
     printf("*** -> Received packet of length %d \n",len);
     sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
-    if (len != sizeof(sr_ethernet_hdr_t)) {
-      printf("the lengh does not meet the minimum length of ethernet\n");
-
+    if (ethernet_hdr != sizeof(sr_ethernet_hdr_t)) {
+      fprintf(stderr, "the lengh does not meet the minimum length of ethernet\n");
+      exit(0);
     }
 
     if(ethertype((uint8_t *)ethernet_hdr) == ethertype_ip) {
