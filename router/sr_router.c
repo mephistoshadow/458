@@ -204,8 +204,10 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             new_ip_hdr->ip_ttl  = 255;
             new_ip_hdr->ip_p    = ip_protocol_icmp;
             if (code==icmp_dest_unreachable_port){
+              printf("ICMP port unreachable.\n");
                 new_ip_hdr->ip_src = ip_hdr->ip_dst;
             }else{
+              printf("ICMP time exceed.\n");
                 new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
             }
             /* calculate new checksum */
@@ -221,6 +223,9 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             memcpy(icmp_hdr->data, ip_hdr, ICMP_DATA_SIZE);
             icmp_hdr->icmp_sum = 0;
             icmp_hdr->icmp_sum = cksum(icmp_hdr, sizeof(sr_icmp_t3_hdr_t));
+
+            print_hdr_icmp(icmp_hdr);
+
             struct sr_rt* rt_entry = longest_matching_prefix(sr, ip_hdr->ip_src);
             if(rt_entry) {
                 struct sr_arpentry * arp_entry = sr_arpcache_lookup (sr_cache, ip_hdr->ip_dst);
@@ -240,7 +245,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                     struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
                     handle_arpreq(sr, req);
                 }
-            }else{
+            } else {
               printf("route table not found\n");
             }
     
