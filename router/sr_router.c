@@ -328,7 +328,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
   print_hdr_ip(packet + sizeof(sr_ethernet_hdr_t));
 
     /* Get the ethernet header. */
-  /* sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet); */
+  sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet);
 
     /* Get the ip header. */
   sr_ip_hdr_t *ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
@@ -421,7 +421,9 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
          /* Send frame to next hop*/ 
           printf("Found ARP entry in ARP cache, send it to next hop.\n");
 
-          /* struct sr_if *dest_if = sr_get_interface(sr, match -> interface); */
+          struct sr_if *dest_if = sr_get_interface(sr, match -> interface);
+          memcpy(eth_hdr->ether_dhost, entry -> mac, ETHER_ADDR_LEN);
+          memcpy(eth_hdr->ether_shost, dest_if -> addr, ETHER_ADDR_LEN);
 
           int status = sr_send_packet(sr, packet, len, match -> interface);
           if (status == -1) {
