@@ -316,7 +316,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
   print_hdr_ip(packet + sizeof(sr_ethernet_hdr_t));
 
     /* Get the ethernet header. */
-  sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet);
+  /* sr_ethernet_hdr_t *eth_hdr = get_ethrnet_hdr(packet); */
 
     /* Get the ip header. */
   sr_ip_hdr_t *ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
@@ -349,23 +349,27 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
       /*Check if it's ICMP echo request*/
         printf("It's ICMP.");
 
-
-
-     
-
+      sr_icmp_hdr_t *icmp_hdr = (sr_icmp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+      /* Check if ICMP is echo request. */  
+      if(icmp_hdr -> icmp_type == icmp_echo_request) {
+        send_icmp_packet(sr, packet, len, interface, icmp_echo_reply, 0);
+      } else {
+        printf("ICMP package cannot be handled.\n");
+      }
       break;
       
       case ip_protocol_tcp:
        /* Send ICMP message type 3 code 3 (Port unreachable)*/ 
         printf("It's TCP.");
-
+        send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_port);
       break;
 
       case ip_protocol_udp:
        /* Send ICMP message type 3 code 3 (Port unreachable)  */  
         printf("It's UDP.");
-
+        send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_port);
       break;
+
       default:
         printf("Cannot handle packet protocol.\n");
       break;
@@ -405,8 +409,12 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
          /* Send frame to next hop*/ 
           printf("Found ARP entry in ARP cache, send it to next hop.\n");
 
-          struct sr_if *dest_if = sr_get_interface(sr, match -> interface);
-          int status = sr_send_packet(sr, packet, len, dest_if);
+          /* struct sr_if *dest_if = sr_get_interface(sr, match -> interface); */
+
+          int status = sr_send_packet(sr, packet, len, match -> interface);
+          if (status == -1) {
+            fprintf(stderr, "Sending packet error.\n");
+          }
 
         } else {
          /* Send ARP Request*/
