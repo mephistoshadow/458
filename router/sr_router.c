@@ -113,6 +113,8 @@ void sr_init(struct sr_instance* sr)
     }else if(arp_header ->ar_op == arp_op_reply) {
       printf("ARP reply.\n");
      handle_arp_reply(sr,packet,len,interface);
+   } else {
+     printf("Unknown ARP.\n");
    }
 
   /*}*/
