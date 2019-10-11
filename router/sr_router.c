@@ -246,7 +246,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
 
                     free(arp_entry);
                 } else {
-                    prinf("Cannot find ARP entry");
+                    printf("Cannot find ARP entry.\n");
                     struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
                     handle_arpreq(sr, req);
                 }
