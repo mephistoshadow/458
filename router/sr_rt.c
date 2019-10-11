@@ -194,8 +194,8 @@ struct sr_rt * sr_find_lpm(struct sr_instance* sr, uint32_t dest) {
       if (!match || (sr_routing_table -> mask.s_addr > match -> mask.s_addr)) {
         match = sr_routing_table;
       }
-      sr_routing_table = sr_routing_table -> next;
     }
+    sr_routing_table = sr_routing_table -> next;
   }
 
     if (match) {
