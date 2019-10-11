@@ -89,15 +89,17 @@ void sr_init(struct sr_instance* sr)
 
     print_hdr_eth(packet);
 
-    if(ethertype((uint8_t *)ethernet_hdr) == ethertype_ip) {
+    if(ethertype(packet) == ethertype_ip) {
       printf("It's IP packet.\n");
       print_hdr_ip(packet + sizeof(sr_ethernet_hdr_t));
       handle_ip(sr,packet,len,interface);
 
-    } else if (ethertype((uint8_t *)ethernet_hdr) == ethertype_arp) {
+    } else if (ethertype(packet) == ethertype_arp) {
       printf("It's ARP packet.\n");
       print_hdr_arp(packet + sizeof(sr_ethernet_hdr_t));
       handle_arp_total(sr,packet,len,interface);
+    } else {
+      printf("Packet unknown.\n");
     }
 
   }
