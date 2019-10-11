@@ -357,7 +357,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
 
     switch (ip_hdr -> ip_p)
     {
-      case ip_protocol_icmp:
+      case ip_protocol_icmp: {
       /*Check if it's ICMP echo request*/
         printf("It's ICMP.");
 
@@ -369,22 +369,26 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
         printf("ICMP package cannot be handled.\n");
       }
       break;
-      
-      case ip_protocol_tcp:
+      }
+
+      case ip_protocol_tcp: {
        /* Send ICMP message type 3 code 3 (Port unreachable)*/ 
         printf("It's TCP.");
         send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_port);
       break;
+      }
 
-      case ip_protocol_udp:
+      case ip_protocol_udp: {
        /* Send ICMP message type 3 code 3 (Port unreachable)  */  
         printf("It's UDP.");
         send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_port);
       break;
+      }
 
-      default:
+      default: {
         printf("Cannot handle packet protocol.\n");
       break;
+      }
     }
     } else {
       /* // Packet destination is elsewhere.*/
