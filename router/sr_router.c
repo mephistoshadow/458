@@ -239,14 +239,19 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                     memcpy(new_eth_hdr->ether_shost, out_interface->addr, sizeof(uint8_t)*ETHER_ADDR_LEN);
                 
 
-                    sr_send_packet(sr, new_packet, len, out_interface->name);
+                    int status = sr_send_packet(sr, new_packet, new_len, out_interface->name);
+                    if (status == -1) {
+                      fprintf(stderr, "Sending packet error.\n");
+                    }
+
                     free(arp_entry);
                 } else {
+                    prinf("Cannot find ARP entry");
                     struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, ip_hdr->ip_dst, packet, len, interface);
                     handle_arpreq(sr, req);
                 }
             } else {
-              printf("route table not found\n");
+              printf("Cannot find LPM.\\n");
             }
     
 
