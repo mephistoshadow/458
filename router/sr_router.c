@@ -107,10 +107,10 @@ void sr_init(struct sr_instance* sr)
    sr_arp_hdr_t *arp_header = (sr_arp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
    /*struct sr_if* sr_interface = sr_get_interface_by_ip(sr,arp_header->ar_tip);
    if(sr_interface) {*/
-    if(arp_header ->ar_op == arp_op_request) {
+    if(ntohs(arp_header ->ar_op) == arp_op_request) {
       printf("ARP request.\n");
       arp_request(sr,packet,len,interface);
-    }else if(arp_header ->ar_op == arp_op_reply) {
+    }else if(ntohs(arp_header ->ar_op) == arp_op_reply) {
       printf("ARP reply.\n");
      handle_arp_reply(sr,packet,len,interface);
    } else {
