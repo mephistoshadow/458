@@ -395,7 +395,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
             send_icmp_packet(sr, packet, len, interface, icmp_dest_unreachable, icmp_dest_unreachable_net);
 
         } else {
-        // Destination has been found, check ARP cache
+        /* Destination has been found, check ARP cache */
         printf("Destination found.\n");
 
         struct sr_arpcache *sr_cache = &sr->cache;
@@ -405,9 +405,8 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
           // Send frame to next hop
           printf("Found ARP entry in ARP cache, send it to next hop.\n");
 
-
-
-          
+          struct sr_if *dest_if = sr_get_interface(sr, match -> interface);
+          int status = sr_send_packet(sr, packet, len, dest_if);
 
         } else {
           // Send ARP Request
@@ -431,9 +430,3 @@ sr_ethernet_hdr_t * get_ethrnet_hdr(uint8_t * packet) {
   }
   return ethernet_hdr;
 }
-
-
-
-
-
-
