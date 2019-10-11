@@ -277,8 +277,8 @@ void arp_request(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* 
    /* revert the ip address for sender and receiever.*/
   new_arp_header -> ar_sip = sr_interface -> ip;
   new_arp_header -> ar_tip = arp_header -> ar_sip;
+   print_hdr_arp(back_packet + sizeof(sr_ethernet_hdr_t));
   sr_send_packet(sr,back_packet,length_new_packet,sr_interface->name);
-  print_hdr_arp(back_packet + sizeof(sr_ethernet_hdr_t));
   free(back_packet);
 }
 
