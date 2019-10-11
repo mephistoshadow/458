@@ -412,7 +412,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
         } else {
          /* // Send ARP Request*/
           printf("Cannot found ARP entry in ARP cache, send ARP request.\n");
-          struct sr_arpreq *req = arpcache_queuereq(sr_cache ,ip_hdr -> ip_dst, packet, len, match -> interface);
+          struct sr_arpreq *req = sr_arpcache_queuereq(sr_cache ,ip_hdr -> ip_dst, packet, len, match -> interface);
           handle_arpreq(sr, req);
         }
       }
