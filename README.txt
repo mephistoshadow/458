@@ -1,6 +1,6 @@
 # 458
-Overview of Code structure.
-
+Overview of Code structure:
+In sr_router.c, we generally flow the workflow from the tutorial slides. To make our structure clear, we have 2 functions to handle IP  and ARP packet.  We build a function to handle sending all kinds of ICMP message.
 ARP part:
 For ARP part, we first check if the packet is ARP request or reply. 
 For ARP request, we first generate a new packet which type
