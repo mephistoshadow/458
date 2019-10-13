@@ -115,7 +115,6 @@ enum icmp_dest_unreachable_code {
     icmp_dest_unreachable_net = 0,
     icmp_dest_unreachable_host = 1,
     icmp_dest_unreachable_port = 3,
-    icmp_dest_unreachable_frag_but_dont_frag_set = 4,
 };
 
 /* Custom: ICMP msg type 11 codes */

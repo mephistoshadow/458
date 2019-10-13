@@ -179,7 +179,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             /* construct IP hdr */
             sr_ip_hdr_t* new_ip_hdr = (sr_ip_hdr_t*)(new_packet + sizeof(sr_ethernet_hdr_t));
             new_ip_hdr->ip_v = 4;
-            new_ip_hdr->ip_hl = sizeof(sr_ip_hdr_t)/4;
+            new_ip_hdr->ip_hl = 4;
             new_ip_hdr->ip_tos  = 0;
             new_ip_hdr->ip_len  = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
             new_ip_hdr->ip_id   = htons(0);
@@ -188,7 +188,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             new_ip_hdr->ip_p    = ip_protocol_icmp;
             if (type ==icmp_dest_unreachable){
                 printf("ICMP dest unreachable.\n");
-                if(code == icmp_dest_unreachable_net){
+                if(code == icmp_dest_unreachable_net && code == icmp_dest_unreachable_host ){
                     printf("net unreachable");
                     new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
                 }else{
