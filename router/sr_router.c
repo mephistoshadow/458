@@ -167,7 +167,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
           }
         case icmp_time_exceeded:
         case icmp_dest_unreachable:{
-          printf("ICMP destination unreachable.\n");
+            printf("ICMP destination unreachable.\n");
             unsigned int new_len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
             uint8_t* new_packet = malloc(new_len);
             /*construct  ethernet header*/
@@ -184,12 +184,12 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             new_ip_hdr->ip_off  = htons(IP_DF);
             new_ip_hdr->ip_ttl  = 255;
             new_ip_hdr->ip_p    = ip_protocol_icmp;
-            if (code==icmp_dest_unreachable_port){
-              printf("ICMP port unreachable.\n");
+            if (type ==icmp_dest_unreachable){
+              printf("ICMP dest unreachable.\n");
                 new_ip_hdr->ip_src = ip_hdr->ip_dst;
             }else{
               printf("ICMP time exceed.\n");
-                new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
+              new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
             }
             new_ip_hdr->ip_dst = ip_hdr->ip_src;
             /* calculate new checksum */
@@ -208,9 +208,9 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
 
             print_hdr_icmp(icmp_hdr);
 
-            struct sr_rt *rt_entry = sr_find_lpm(sr, ip_hdr -> ip_dst);
+            struct sr_rt *rt_entry = sr_find_lpm(sr, new_ip_hdr -> ip_dst);
             if(rt_entry) {
-                struct sr_arpentry * arp_entry = sr_arpcache_lookup (sr_cache, ip_hdr->ip_dst);
+                struct sr_arpentry * arp_entry = sr_arpcache_lookup (sr_cache, new_ip_hdr->ip_dst);
                 if (arp_entry) {
                     printf("Found the ARP entry in the cache\n");
                     struct sr_if *out_interface = sr_get_interface(sr, rt_entry->interface);
@@ -220,7 +220,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                     memcpy(new_eth_hdr->ether_dhost, arp_entry->mac, sizeof(uint8_t)*ETHER_ADDR_LEN);
                     memcpy(new_eth_hdr->ether_shost, out_interface->addr, sizeof(uint8_t)*ETHER_ADDR_LEN);
                 
-
+                    print_hdrs(new_packet,new_len);
                     int status = sr_send_packet(sr, new_packet, new_len, out_interface->name);
                     if (status == -1) {
                       fprintf(stderr, "Sending packet error.\n");
