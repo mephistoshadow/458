@@ -16,6 +16,4 @@ ICMP part:
 For sending ICMP packets, we build a general interface function to send all kinds of ICMP messages. The most important part of this function is to set new Source IP and destination IP.  For echo reply, we simply switch the  IP addresses of the original packet. For time exceed and destination unreachable, we construct a new packet and use source IP of original packet ad new destination IP, and find the interface of router as new source IP.  Then we use arp cache to get mac addresses. If we can't find the destination mac address then we add it to the arp request queue.
 
 
-
-
-design decisions:
+Decisions: First we seperate the packet into two cases.One is for IP packet the other is For ARP packet. Then For ARP and IP we solve it individually and accomplish it's own functionality.We spend sometime to figuare out which case we need use big endian and which case we use little endian when we assign variable's value. Because if we use wrong order, it causes the hard situation to debug.
