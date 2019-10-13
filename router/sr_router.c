@@ -178,6 +178,8 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             new_eth_hdr->ether_type = htons(ethertype_ip);
             /* construct IP hdr */
             sr_ip_hdr_t* new_ip_hdr = (sr_ip_hdr_t*)(new_packet + sizeof(sr_ethernet_hdr_t));
+            new_ip_hdr->ip_v = 4;
+            new_ip_hdr->ip_hl = sizeof(sr_ip_hdr_t)/4;
             new_ip_hdr->ip_tos  = 0;
             new_ip_hdr->ip_len  = htons(sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t));
             new_ip_hdr->ip_id   = htons(0);
@@ -185,11 +187,16 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
             new_ip_hdr->ip_ttl  = INIT_TTL;
             new_ip_hdr->ip_p    = ip_protocol_icmp;
             if (type ==icmp_dest_unreachable){
-              printf("ICMP dest unreachable.\n");
-                new_ip_hdr->ip_src = ip_hdr->ip_dst;
+                printf("ICMP dest unreachable.\n");
+                if(code == icmp_dest_unreachable_net){
+                    printf("net unreachable");
+                    new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
+                }else{
+                    new_ip_hdr->ip_src = ip_hdr->ip_dst;
+                }
             }else{
-              printf("ICMP time exceed.\n");
-              new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
+                printf("ICMP time exceed.\n");
+                new_ip_hdr->ip_src = sr_get_interface(sr, interface)->ip;
             }
             new_ip_hdr->ip_dst = ip_hdr->ip_src;
             /* calculate new checksum */
@@ -228,7 +235,7 @@ void send_icmp_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len,
                     free(arp_entry);
                 } else {
                     printf("Cannot find ARP entry.\n");
-                    struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, new_ip_hdr -> ip_dst, packet, new_len, rt_entry ->interface);
+                    struct sr_arpreq * req = sr_arpcache_queuereq(sr_cache, new_ip_hdr -> ip_dst, new_packet, new_len, rt_entry ->interface);
                     handle_arpreq(sr, req);
                 }
             } else {
