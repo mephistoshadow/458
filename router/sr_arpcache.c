@@ -34,7 +34,7 @@ void handle_arpreq (struct sr_instance *sr,struct sr_arpreq *arp_requests) {
     double different_t = difftime(time(&now),arp_requests->sent);
     struct sr_if *sr_interface = sr_get_interface(sr,wait_packets->iface);
     int length_new_packet = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
-    if(different_t>1.0) {
+    if(different_t>=1.0) {
         if(arp_requests->times_sent >=5) {
             while(wait_packets) {
                 /*generate the icmp unreachable*/

@@ -85,6 +85,7 @@ void sr_init(struct sr_instance* sr)
     sr_ethernet_hdr_t *ethernet_hdr = (sr_ethernet_hdr_t*) packet;
     if (sizeof(ethernet_hdr) != sizeof(sr_ethernet_hdr_t)) {
       fprintf(stderr, "the lengh does not meet the minimum length of ethernet\n");
+      return;
     }
 
     print_hdr_eth(packet);
