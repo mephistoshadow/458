@@ -10,6 +10,22 @@ For "sr_arpcache_sweepreqs" and "handle_arpreq" for every ARP request in the cac
 
 
 IP part:
+1. Check the checksum
+2. Find if the destination of the package is this router
+	a. Package destination is this router
+		a1. If it's ICMP echo request, send ICMP echo reply
+		a2. If it's TCP or UDP, send ICMP port unreachable
+	b. Package destination elsewhere
+		b1. Decrease TTL
+		b2. If TTL < 1, send ICMP time exceeded
+		b3. Recalculate the checksum
+		b4. Find longest prefix match, if cannot find longest prefix match send ICMP destination net unreachable
+		b5. Find arp entry, if cannot find arp entry in cache, broadcast ARP request
+		b6. Send it to next hop
+
+For the destination checking part (part 2), I don't know how to use the helper function sr_get_interface, so I wrote another helper function that helps me get interface by ip address.
+For the package forwarding part (part b6), I thought sending the original package with a TTL decrease is ok. However, by debugging with me teammates, I found out I have to change the hosts for the ethernet header in order to forward the package.
+
 
 
 ICMP part:

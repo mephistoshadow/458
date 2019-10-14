@@ -334,7 +334,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
     /* Error checking of assigning ip header.*/
   if (!ip_hdr) {
     fprintf(stderr, "Assigning ip header error.\n");
-    exit(0);
+    return;
   }
 
     /* Checking checksum. */
@@ -342,7 +342,7 @@ void handle_ip(struct sr_instance* sr,uint8_t * packet,unsigned int len,char* in
   ip_hdr -> ip_sum = 0;
   if (cksum(ip_hdr, sizeof(sr_ip_hdr_t)) != checksum) {
     fprintf(stderr, "Wrong checksum.\n");
-    exit(0);
+    return;
   }
   ip_hdr -> ip_sum = checksum;
 
